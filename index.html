@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storys Checker · 视频生产控制台</title>
+  <!--PANEL-DATA-SLOT-->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="side-brand">
+      <div class="logo">SC</div>
+      <div class="side-brand-text">
+        <div class="side-title">Storys Checker</div>
+        <div class="side-sub">视频生产控制台</div>
+      </div>
+    </div>
+
+    <nav class="side-nav">
+      <div class="nav-label">工作台</div>
+      <button class="nav-item active" data-tab="monitor"><span class="nav-ic">▣</span>流程监控</button>
+      <button class="nav-item" data-tab="overview"><span class="nav-ic">◈</span>总览</button>
+      <button class="nav-item" data-tab="projects"><span class="nav-ic">▤</span>项目详情</button>
+
+      <div class="nav-label">能力库</div>
+      <button class="nav-item" data-tab="features"><span class="nav-ic">✦</span>常用功能</button>
+      <button class="nav-item" data-tab="workflow"><span class="nav-ic">⇶</span>工作流门禁</button>
+      <button class="nav-item" data-tab="commands"><span class="nav-ic">⌘</span>脚本命令</button>
+      <button class="nav-item" data-tab="bgm"><span class="nav-ic">♫</span>BGM 库</button>
+      <button class="nav-item" data-tab="prompts"><span class="nav-ic">✎</span>Prompt 库</button>
+
+      <div class="nav-label">运维</div>
+      <button class="nav-item" data-tab="checks"><span class="nav-ic">✓</span>检查反馈</button>
+    </nav>
+
+    <div class="side-footer">
+      <button class="nav-item" data-goto="checks">
+        <span class="health-dot" id="side-health-dot"></span>
+        <span>健康分 <b id="side-health">—</b></span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="page-title" id="page-title">流程监控</div>
+      <div class="topbar-proj" id="topbar-proj"></div>
+      <div class="topbar-actions">
+        <span id="scanned-at" class="muted"></span>
+        <button id="refresh-btn" class="btn">↻ 重新扫描</button>
+        <button class="btn" data-goto="checks">运行检查</button>
+      </div>
+    </header>
+    <main id="app" class="app"><div class="loading">加载中…</div></main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

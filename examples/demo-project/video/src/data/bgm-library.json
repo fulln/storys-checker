@@ -1,0 +1,7 @@
+{
+  "tracks": [
+    { "id": "demo-bed", "name": "叙事底色", "file": "audio/bgm/demo-bed.mp3", "description": "低压叙事底", "energy": 2, "narrationGain": 0.25, "gapGain": 0.45 },
+    { "id": "demo-rise", "name": "升级推进", "file": "audio/bgm/demo-rise.mp3", "description": "数据升级", "energy": 4, "narrationGain": 0.2, "gapGain": 0.5 }
+  ],
+  "stingers": [{ "id": "demo-hit", "name": "转折重音", "file": "audio/bgm/demo-hit.mp3" }]
+}

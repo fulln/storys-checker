@@ -1,0 +1,276 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/fulln/storys-checker/config.schema.json",
+  "title": "Storys Checker 配置",
+  "description": "config.json / config.example.json 的结构。引擎与配置分离：增删项目、功能、检查、门禁都只改这个文件。",
+  "type": "object",
+  "properties": {
+    "extends": {
+      "type": "string",
+      "description": "继承另一份配置（相对本文件），对象深合并、数组整体覆盖"
+    },
+    "projects": {
+      "type": "array",
+      "description": "被监控的视频项目",
+      "items": {
+        "type": "object",
+        "required": ["id", "root"],
+        "properties": {
+          "id": { "type": "string", "description": "项目标识，检查报告与配置里用它引用" },
+          "label": { "type": "string", "description": "面板显示名" },
+          "root": { "type": "string", "description": "项目根目录，支持 ~ 与相对本配置文件的路径" },
+          "videoDir": { "type": "string", "description": "Remotion 工程目录，默认等于 root" }
+        }
+      }
+    },
+    "workflowPatterns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["WORKFLOW"],
+      "description": "在项目根目录与 video 目录里按文件名包含关系发现的规范文档"
+    },
+    "scriptGroups": {
+      "type": "array",
+      "description": "npm scripts 的展示分组（正则前缀匹配，按顺序优先）",
+      "items": {
+        "type": "object",
+        "required": ["key", "match"],
+        "properties": {
+          "key": { "type": "string" },
+          "match": { "type": "string", "description": "正则字符串" }
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "description": "跨项目能力清单，detect 是声明式检测规则",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "cat": { "type": "string" },
+          "desc": { "type": "string" },
+          "detect": {
+            "type": "object",
+            "description": "多个键之间是「且」关系",
+            "properties": {
+              "always": { "type": "boolean" },
+              "component": { "type": "string" },
+              "componentPattern": { "type": "string" },
+              "scriptFile": { "type": "string", "description": "video/<scripts> 下的文件名" },
+              "scriptPattern": { "type": "string" },
+              "rootScript": { "type": "string", "description": "<root>/scripts 下的文件名" },
+              "rootScriptPattern": { "type": "string" },
+              "dataFile": { "type": "string", "description": "video/src/data 下的文件名" },
+              "npmScript": { "type": "string" },
+              "npmPrefix": { "type": "string" },
+              "rootDoc": { "type": "string", "description": "项目根目录 md 文件名的正则" },
+              "dir": { "type": "string", "description": "相对项目根目录存在的目录" },
+              "hasStills": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "启用的检查插件 id（checks/*.mjs 的 default.id）"
+        },
+        "scope": {
+          "type": "object",
+          "description": "逐包检查的时间范围；不设置表示全量检查历史内容包",
+          "properties": {
+            "days": { "type": ["integer", "null"], "minimum": 0, "description": "只检查最近 N 天的内容包" },
+            "since": { "type": ["string", "null"], "description": "只检查此日期（YYYY-MM-DD）之后的内容包" },
+            "note": { "type": "string" }
+          }
+        },
+        "requiredFiles": {
+          "type": "object",
+          "description": "每个项目每个内容包必须存在的产物文件",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        },
+        "requiredFilesOnlyWhen": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "只有存在其中任意一个文件时才按交付包判罚（默认 script.md / storyboard.md / review-log.md / publish-package.json / episode.json），避免把选题阶段的候选目录算作缺产物",
+          "default": ["script.md", "storyboard.md", "review-log.md", "publish-package.json", "episode.json"]
+        },
+        "publishPackage": {
+          "type": "object",
+          "description": "发布包约定档案：defaults 为通用默认（内置为「双封面 + 发布信息/来源核对 + manifest」约定），overrides[<项目 id>] 覆盖它；override 设为 false 表示该项目不做发布包检查",
+          "properties": {
+            "defaults": { "$ref": "#/definitions/publishProfile" },
+            "overrides": {
+              "type": "object",
+              "additionalProperties": { "oneOf": [{ "$ref": "#/definitions/publishProfile" }, { "type": "boolean" }] }
+            }
+          }
+        },
+        "scriptReview": {
+          "type": "object",
+          "description": "口播审阅页检查：只对含 requiredSection 小节的 script.md 判罚",
+          "properties": {
+            "requiredSection": { "type": "string", "default": "## 口播稿" },
+            "builder": { "type": "string", "default": "scripts/build-script-review-html.mjs" },
+            "note": { "type": "string" }
+          }
+        },
+        "timing": {
+          "type": "object",
+          "properties": {
+            "toleranceSeconds": {
+              "type": "number",
+              "default": 5,
+              "description": "旁白音频比 timing.generated.ts 新多少秒才算过期；同一次生成流程的毫秒级先后不应判罚"
+            }
+          }
+        },
+        "bgmFiles": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": ["in-use", "all"],
+              "default": "in-use",
+              "description": "in-use：只有当前选择或检查范围内成片引用的缺失曲目才算 error，历史目录项降为 info；all：全部判 error"
+            }
+          }
+        },
+        "visualQa": {
+          "type": "object",
+          "properties": {
+            "minScore": { "type": "number", "default": 90, "description": "关键帧 visual-verdict 阈值" }
+          }
+        },
+        "personalIp": {
+          "type": "object",
+          "properties": {
+            "since": { "type": ["string", "null"], "description": "个人 IP 系统启用日期，更早的内容包跳过检查" },
+            "note": { "type": "string" }
+          }
+        },
+        "dailyReview": {
+          "type": "object",
+          "properties": {
+            "since": { "type": ["string", "null"], "description": "复盘交接检查起始日期" },
+            "note": { "type": "string" }
+          }
+        }
+      }
+    },
+    "fixes": {
+      "type": "object",
+      "description": "可自动修复项：检查项通过 fixId 引用这里",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["cmd"],
+        "properties": {
+          "cwd": { "enum": ["root", "video"], "default": "root" },
+          "cmd": { "type": "string" },
+          "args": { "type": "array", "items": { "type": "string" }, "description": "{arg} 会被替换为检查给出的参数" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "health": {
+      "type": "object",
+      "description": "健康分模型：100 - 错误扣分 - 警告扣分 - 提示扣分",
+      "properties": {
+        "errorWeight": { "type": "number", "default": 15, "description": "每个 error 扣多少分" },
+        "errorCapPoints": { "type": "number", "default": 70, "description": "错误扣分上限" },
+        "warnCapPoints": { "type": "number", "default": 45, "description": "警告扣分上限（饱和曲线的上限）" },
+        "warnHalf": { "type": ["number", "null"], "default": 40, "description": "饱和曲线半程点：N 条警告时扣一半上限分；设为 null 回退为「线性 + warnCap 封顶」" },
+        "warnWeight": { "type": "number", "default": 1, "description": "仅当 warnHalf=null 时生效的线性斜率" },
+        "warnCap": { "type": "number", "default": 20, "description": "仅当 warnHalf=null 时生效的警告条数封顶" },
+        "infoWeight": { "type": "number", "default": 0.25 },
+        "infoCap": { "type": "number", "default": 5 },
+        "threshold": { "type": "number", "default": 70, "description": "gate.mjs 判定通过的最低健康分" }
+      }
+    },
+    "notify": {
+      "type": "object",
+      "properties": {
+        "onHealthBelow": { "type": ["number", "null"] },
+        "onError": { "type": "boolean" },
+        "webhook": { "type": "string", "description": "钉钉/飞书/Slack webhook，留空则不发送" },
+        "command": { "type": "string", "description": "告警时执行的 shell 命令，payload 见环境变量 STORYS_CHECKER_JSON" }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "description": "监控页的阶段板（门禁主线）",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "desc": { "type": "string" },
+          "npm": { "type": "array", "items": { "type": "string" } },
+          "mode": { "enum": ["auto", "decision", "mixed"] },
+          "summary": { "type": "string" },
+          "priority": { "type": "number" },
+          "priorityLabel": { "type": "string" },
+          "musts": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  },
+  "required": ["projects"],
+  "definitions": {
+    "publishProfile": {
+      "type": "object",
+      "description": "一个发布包约定。对象深合并、数组整体覆盖；把某项设为 null 可关闭该项检查。",
+      "properties": {
+        "pendingDir": { "type": "string", "default": "publish/待发布" },
+        "dirPattern": { "type": ["string", "null"], "description": "待发布包目录名的正则；null 表示不校验命名" },
+        "requiredFiles": { "type": "array", "items": { "type": "string" } },
+        "minDocuments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "file": { "type": "string" }, "minBytes": { "type": "number" } }
+          }
+        },
+        "manifest": {
+          "type": ["object", "null"],
+          "properties": {
+            "file": { "type": "string", "default": "manifest.json" },
+            "status": {
+              "type": "object",
+              "properties": {
+                "field": { "type": "string" },
+                "equals": { "description": "期望值；null 表示不校验" },
+                "oneOf": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "version": {
+              "type": ["object", "null"],
+              "properties": { "field": { "type": "string" }, "pattern": { "type": "string" } }
+            },
+            "requiredFields": { "type": "array", "items": { "type": "string" } },
+            "assets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": { "key": { "type": "string" }, "value": { "type": "string" } }
+              }
+            },
+            "hashesField": { "type": "string", "default": "sha256" },
+            "hashFiles": { "type": "array", "items": { "type": "string" } },
+            "engagement": { "type": "boolean", "description": "是否校验 engagement 区块（首评/下期承诺/主页动作/回复方向）" },
+            "personalIpRequiredForSchema": { "type": ["string", "null"], "description": "声明该 schemaVersion 时强制要求 productionChecks.personalIp" }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

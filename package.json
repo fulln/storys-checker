@@ -1,0 +1,74 @@
+{
+  "name": "storys-checker",
+  "version": "2.0.0",
+  "description": "本地视频生产控制台：扫描 Remotion/Koboyo 项目、复盘 P0—P12 门禁、健康分、发布包校验与实时进程监控（零依赖）",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "remotion",
+    "video-production",
+    "dashboard",
+    "quality-gate",
+    "health-score",
+    "publish-package",
+    "chinese-short-video"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fulln/storys-checker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fulln/storys-checker/issues"
+  },
+  "homepage": "https://github.com/fulln/storys-checker#readme",
+  "files": [
+    "app.js",
+    "style.css",
+    "index.html",
+    "scan.mjs",
+    "checks.mjs",
+    "serve.mjs",
+    "runner.mjs",
+    "gate.mjs",
+    "build-panel.mjs",
+    "lib/",
+    "checks/",
+    "scripts/",
+    "docs/README.md",
+    "docs/UIUX.md",
+    "docs/DEPLOY.md",
+    "docs/PUBLISHING.md",
+    "deploy/",
+    "examples/",
+    "config.example.json",
+    "config.schema.json",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".dockerignore",
+    ".env.example",
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "SECURITY.md",
+    "tests/"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "export:public": "node scripts/export-public.mjs",
+    "setup": "node scripts/init.mjs",
+    "start": "node serve.mjs",
+    "scan": "node scan.mjs",
+    "build": "node scan.mjs && node build-panel.mjs",
+    "demo": "node scripts/demo.mjs",
+    "check": "node checks.mjs",
+    "check:fix": "node checks.mjs --fix",
+    "watch": "node checks.mjs --watch",
+    "gate": "node gate.mjs",
+    "start:readonly": "node serve.mjs --readonly",
+    "docker:build": "docker build -t storys-checker:$(node -p \"require('./package.json').version\") .",
+    "docker:up": "docker compose up -d"
+  }
+}

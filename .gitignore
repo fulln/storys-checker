@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+
+# 本地私有配置与运行产物（不进入公共仓库）
+config.local.json
+config.json
+data.json
+panel.html
+check-report.json
+fix-result.json
+logs/
+history/
+
+# 部署
+.env
+state/

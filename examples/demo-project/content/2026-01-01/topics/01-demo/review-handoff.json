@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "sourceBrief": "outputs/weekly-video-review-2026-W01/周生产简报-2026-01-01.json",
+  "sourceSha256": "fb344225f5f7fe9ab13ffa40e9d4aecfc10bb9e540e20a4af488d1f18d6f65b1",
+  "experimentId": "exp-2026-01-01-s1",
+  "application": {
+    "variable": "把核心结论提前到第 1 秒",
+    "preserve": [
+      "封面",
+      "结尾"
+    ],
+    "metric": [
+      "前2秒跳出率"
+    ]
+  }
+}

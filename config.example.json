@@ -1,0 +1,611 @@
+{
+  "projects": [
+    {
+      "id": "demo",
+      "label": "示例项目（demo-project）",
+      "root": "./examples/demo-project",
+      "videoDir": "./examples/demo-project/video"
+    }
+  ],
+  "workflowPatterns": [
+    "WORKFLOW"
+  ],
+  "scriptGroups": [
+    {
+      "key": "工程 / 校验",
+      "match": "^(dev|build|lint|test|verify|upgrade)$"
+    },
+    {
+      "key": "选题 / 内容",
+      "match": "^(topics|publish)"
+    },
+    {
+      "key": "数据抓取",
+      "match": "^data:"
+    },
+    {
+      "key": "配音 / TTS",
+      "match": "^(voice|timing|captions)"
+    },
+    {
+      "key": "BGM 音乐",
+      "match": "^bgm"
+    },
+    {
+      "key": "图标 / 素材",
+      "match": "^icons"
+    },
+    {
+      "key": "渲染成片",
+      "match": "^render"
+    },
+    {
+      "key": "封面 / 缩略图",
+      "match": "^(still|thumbnail)"
+    }
+  ],
+  "features": [
+    {
+      "id": "remotion-registry",
+      "name": "Composition / Still / Folder 注册体系",
+      "cat": "工程底座",
+      "desc": "Root.tsx 统一注册成片 Composition、封面/缩略图 Still，并按 Folder 分组，便于逐幕与关键帧单独检查。",
+      "detect": {
+        "always": true
+      }
+    },
+    {
+      "id": "koboyo-icon",
+      "name": "Koboyo SVG 图标系统",
+      "cat": "素材系统",
+      "desc": "KoboyoIcon（通用图形：tone 滤镜着色、enter 入场、翻转、修正）+ Actor（人物：底部基线对齐、可见高度）+ iconCorrections 修正 + icon-library 索引。",
+      "detect": {
+        "component": "KoboyoIcon.tsx"
+      }
+    },
+    {
+      "id": "stage-safe-area",
+      "name": "品牌舞台与安全区",
+      "cat": "视觉底座",
+      "desc": "TheaterStage（竖屏 4 调色板 + 点阵底纹）与 YouTubeStage（横屏霓虹网格），固定品牌角标、日期、标题与来源位，保证安全区不越界。",
+      "detect": {
+        "componentPattern": "Stage\\.tsx$"
+      }
+    },
+    {
+      "id": "subtitle-band",
+      "name": "字幕安全带（@remotion/captions）",
+      "cat": "字幕",
+      "desc": "SubtitleBand 按 captions 时间轴淡入淡出，底部安全区 + box-decoration-break 多行胶囊底，避免被平台 UI 遮挡。",
+      "detect": {
+        "component": "SubtitleBand.tsx"
+      }
+    },
+    {
+      "id": "minimax-voice",
+      "name": "MiniMax 克隆音色 + 分场景旁白",
+      "cat": "声音",
+      "desc": "clone-minimax-voice（上传克隆）、generate-voiceover / generate-episode-voiceover（分场景合成），.env 区分按量 Key 与 Token Plan Key。",
+      "detect": {
+        "scriptFile": "clone-minimax-voice.mjs"
+      }
+    },
+    {
+      "id": "tts-timeline",
+      "name": "TTS 逐词时间轴（timing.generated.ts）",
+      "cat": "声音",
+      "desc": "MiniMax 返回逐词时间戳 → rebuild-episode-timing 产出 timing.generated.ts，场景切点、字幕、BGM 转折共用同一时间轴，段间约 120ms 间隙。",
+      "detect": {
+        "scriptFile": "rebuild-episode-timing.mjs"
+      }
+    },
+    {
+      "id": "bgm-library",
+      "name": "原创 BGM 库 + 自动选择",
+      "cat": "音乐",
+      "desc": "generate-bgm-library 生成曲目目录，select-bgm 按关键词候选排序，verify-bgm-library 校验时长/采样率/解码，soundtrack-selection.json 记录本期选择与理由。",
+      "detect": {
+        "scriptFile": "generate-bgm-library.mjs"
+      }
+    },
+    {
+      "id": "bgm-ducking",
+      "name": "旁白闪避混音（ducking）",
+      "cat": "音乐",
+      "desc": "soundtrack.ts 的 getBgmVolume 按字幕逐帧在 narrationGain / gapGain 之间插值，人声淡入淡出，高潮 stinger 单独钉帧。",
+      "detect": {
+        "dataFile": "soundtrack-selection.json"
+      }
+    },
+    {
+      "id": "transitions",
+      "name": "转场系统（@remotion/transitions）",
+      "cat": "动效",
+      "desc": "TransitionSeries + fade/linearTiming，常规转场 3 帧（0.1s），不靠转场补旁白空白。",
+      "detect": {
+        "always": true
+      }
+    },
+    {
+      "id": "covers-thumbs",
+      "name": "封面 / 缩略图 Still 导出",
+      "cat": "交付",
+      "desc": "3:4（抖音）与 6:7（微信）双封面，或 16:9 / 1:1 缩略图，独立 Still 组件，不用视频首帧。",
+      "detect": {
+        "hasStills": true
+      }
+    },
+    {
+      "id": "fetch-history",
+      "name": "历史数据抓取脚本",
+      "cat": "数据",
+      "desc": "fetch-*-history.mjs 抓取股价/黄金/白银等历史序列，产出结构化 JSON 供数据镜头使用。",
+      "detect": {
+        "scriptPattern": "^fetch-.*history\\.mjs$"
+      }
+    },
+    {
+      "id": "verify-output",
+      "name": "成片技术校验（verify-output.sh）",
+      "cat": "工程底座",
+      "desc": "ffprobe 检查容器/编码/分辨率/帧率/时长/完整解码/峰值/SHA-256，硬门禁退出码 0。",
+      "detect": {
+        "scriptFile": "verify-output.sh"
+      }
+    },
+    {
+      "id": "production-gates",
+      "name": "生产门禁（*WORKFLOW*.md）",
+      "cat": "流程",
+      "desc": "项目根目录的生产流程文档自动被发现并解析：gzh 的 P0—P12 门禁，ytb 的制作门禁与发布门禁。",
+      "detect": {
+        "rootDoc": "WORKFLOW"
+      }
+    },
+    {
+      "id": "topic-discovery",
+      "name": "选题发现与发布暂存",
+      "cat": "流程",
+      "desc": "topic-discovery.mjs（选题发现）、promote-topic-candidate.mjs（候选晋级）、stage-publish.mjs（发布暂存），YouTube 侧内容管线。",
+      "detect": {
+        "scriptFile": "topic-discovery.mjs"
+      }
+    },
+    {
+      "id": "publish-package-gate",
+      "name": "发布包硬门禁（6 件套 + manifest + SHA-256）",
+      "cat": "流程",
+      "desc": "build-publish-package 组装 video.mp4、双封面、发布信息.md、来源与核对.md、manifest.json；verify-publish-package 校验 schemaVersion 1.1、engagement、个人 IP 决策、SHA-256、1080×1920 H.264/AAC 30fps 与封面尺寸。",
+      "detect": {
+        "rootScript": "verify-publish-package.mjs"
+      }
+    },
+    {
+      "id": "daily-review-pipeline",
+      "name": "每日复盘流水线 + 单变量执行目标",
+      "cat": "流程",
+      "desc": "run-daily-review 采集→标准化→T+2h/T+24h/T+7d 成熟度→唯一最弱环节→单变量实验→规则升级门禁，产出执行目标-*.json 并回写 review-log.md 的「发布前实验卡」。",
+      "detect": {
+        "dir": "scripts/daily-review"
+      }
+    },
+    {
+      "id": "personal-ip-system",
+      "name": "个人 IP 决策与动作叙事职责",
+      "cat": "个人 IP",
+      "desc": "used / static / omitted 三选一写入 storyboard.md 与 publish-package.json；used 必须给出资产、触发事实、时间码、叙事职责、落定帧与关键帧证据。",
+      "detect": {
+        "dir": "video/public/illustrations/personal-ip"
+      }
+    },
+    {
+      "id": "editorial-script-skill",
+      "name": "口播脚本 skill（钩子竞争 / 强制删稿）",
+      "cat": "选题 / 内容",
+      "desc": "gzh-short-video-script skill：五行内部简报定剧情、6—10 个钩子候选、0—2s/2—8s/8—15s/15—46s/46—54s 分段与逐段反向删稿检查。",
+      "detect": {
+        "dir": ".codex/skills/gzh-short-video-script"
+      }
+    },
+    {
+      "id": "soul-constitution",
+      "name": "账号定位宪法（soul.md）",
+      "cat": "选题 / 内容",
+      "desc": "账号定位、日期规则、事实可信与「产品/公司/新闻现场 + 一条可证实关系」的选题标准，作为事实边界与创作取舍的上位约束。",
+      "detect": {
+        "rootDoc": "^soul\\.md$"
+      }
+    },
+    {
+      "id": "whisperx-align",
+      "name": "WhisperX 字幕对齐与逐词校验",
+      "cat": "声音",
+      "desc": "align-captions-whisper 复核 TTS 逐词时间戳与旁白音频是否一致，字幕逐字对齐后再钉 BGM 转折与高潮落点。",
+      "detect": {
+        "scriptFile": "align-captions-whisper.mjs"
+      }
+    },
+    {
+      "id": "video-architecture",
+      "name": "视频生产架构分层（语义时间层）",
+      "cat": "工程底座",
+      "desc": "内容层 / 语义时间层 / 单期配置层 / 组件层 / 轨道层 / 运行与结果分层；每期只新增单期配置、素材与少量自定义场景，不再复制注册与时间轴代码。",
+      "detect": {
+        "rootDoc": "VIDEO_PRODUCTION_ARCHITECTURE"
+      }
+    },
+    {
+      "id": "vision-cutout",
+      "name": "视觉抠图（macOS Vision）",
+      "cat": "素材系统",
+      "desc": "vision-cutout.swift 用系统 Vision 框架从新闻/档案图片中抠出主体，减少人工描边，保持现场素材为画面主体。",
+      "detect": {
+        "rootScript": "vision-cutout.swift"
+      }
+    },
+    {
+      "id": "batch-climax-render",
+      "name": "高潮片段批量渲染",
+      "cat": "渲染",
+      "desc": "batch-render-climax-episodes.py 批量导出高潮段落局部片段，用于逐条核对高潮落点与 BGM 起伏。",
+      "detect": {
+        "rootScriptPattern": "^batch-render-.*\\.py$"
+      }
+    },
+    {
+      "id": "bgm-trends",
+      "name": "BGM 周度趋势台账",
+      "cat": "音乐",
+      "desc": "content/_operations/bgm-trends/ 按周记录 BGM 使用与效果趋势，避免同一曲目在高潮位重复过度。",
+      "detect": {
+        "dir": "content/_operations/bgm-trends"
+      }
+    },
+    {
+      "id": "content-templates",
+      "name": "内容包模板（_templates）",
+      "cat": "流程",
+      "desc": "content/_templates/ 统一 research / script / storyboard / review-log / publish-package / content-memory 模板，新期直接复制，字段与门禁对齐。",
+      "detect": {
+        "dir": "content/_templates"
+      }
+    }
+  ],
+  "checks": {
+    "enabled": [
+      "git",
+      "required-files",
+      "script-review",
+      "timing",
+      "bgm-files",
+      "soundtrack-refs",
+      "attribution",
+      "icons-index",
+      "config-self",
+      "publish-package",
+      "personal-ip",
+      "daily-review"
+    ],
+    "requiredFiles": {
+      "demo": [
+        "research.md",
+        "script.md",
+        "storyboard.md",
+        "review-log.md",
+        "episode.json"
+      ]
+    },
+    "personalIp": {
+      "since": "2026-09-12",
+      "note": "PERSONAL_IP_SYSTEM.md 生效日期，早于此日期的人工跳过"
+    },
+    "dailyReview": {
+      "since": null,
+      "note": "留空表示检查所有带 review-handoff.json 的内容包"
+    },
+    "scope": {
+      "days": null,
+      "since": null,
+      "note": "null 表示全量检查；示例项目只有一天内容包"
+    },
+    "timing": {
+      "toleranceSeconds": 5,
+      "note": "旁白音频与 timing 常在同一次生成流程写入，留容差避免误判"
+    },
+    "publishPackage": {
+      "overrides": {}
+    },
+    "bgmFiles": {
+      "mode": "in-use"
+    },
+    "scriptReview": {
+      "requiredSection": "## 口播稿",
+      "builder": "scripts/build-script-review-html.mjs",
+      "note": "只对含该小节、能生成审阅页的 script.md 判罚"
+    }
+  },
+  "fixes": {
+    "timing": {
+      "cwd": "video",
+      "cmd": "npm",
+      "args": [
+        "run",
+        "timing:episode",
+        "--",
+        "{arg}"
+      ],
+      "note": "重算 TTS 逐词时间轴 timing.generated.ts"
+    },
+    "script-review": {
+      "cwd": "root",
+      "cmd": "node",
+      "args": [
+        "scripts/build-script-review-html.mjs",
+        "{arg}"
+      ],
+      "note": "重新生成 script-review.html 文案审阅页"
+    },
+    "icons-index": {
+      "cwd": "video",
+      "cmd": "npm",
+      "args": [
+        "run",
+        "icons:index"
+      ],
+      "note": "重建图标索引 icon-library.json"
+    }
+  },
+  "health": {
+    "errorWeight": 15,
+    "errorCapPoints": 70,
+    "warnCapPoints": 45,
+    "warnHalf": 40,
+    "warnWeight": 1,
+    "warnCap": 20,
+    "infoWeight": 0.25,
+    "infoCap": 5,
+    "threshold": 70
+  },
+  "notify": {
+    "onHealthBelow": 70,
+    "onError": true,
+    "webhook": "",
+    "command": ""
+  },
+  "stages": [
+    {
+      "id": "P0",
+      "name": "启动单期",
+      "desc": "建内容包 + review-handoff.json",
+      "npm": [],
+      "mode": "auto",
+      "summary": "算对日期、建对包、只留一个实验变量",
+      "priority": 1,
+      "priorityLabel": "事实",
+      "musts": [
+        "发布日期/历史日期正确",
+        "内容包不散落",
+        "唯一实验变量",
+        "交接字段一致"
+      ]
+    },
+    {
+      "id": "P1",
+      "name": "候选搜索",
+      "desc": "3-5 个候选，日期可证明",
+      "npm": [],
+      "mode": "decision",
+      "summary": "至少一个候选可证明、能成场景、一分钟讲清",
+      "priority": 1,
+      "priorityLabel": "事实",
+      "musts": [
+        "候选三条件全满足",
+        "与历史作品去重"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "事实核验",
+      "desc": "research.md + 事实边界",
+      "npm": [],
+      "mode": "mixed",
+      "summary": "事实可溯，不混写、不造假",
+      "priority": 1,
+      "priorityLabel": "事实",
+      "musts": [
+        "流行≠当天",
+        "资料图≠现场图",
+        "数字可溯"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "口播与高潮点",
+      "desc": "script.md + script-review.html",
+      "npm": [
+        "voice:episode"
+      ],
+      "mode": "mixed",
+      "summary": "第1秒独有信息、2秒承诺、15秒兑现",
+      "priority": 3,
+      "priorityLabel": "前2秒",
+      "musts": [
+        "第1秒独有信息",
+        "前2秒承诺明确",
+        "封面15秒内兑现",
+        "E19-PAYOFF 12-15秒",
+        "高潮前静音≤0.5s",
+        "钩子候选 ≥6 且四类入口覆盖",
+        "逐段强制删稿检查"
+      ]
+    },
+    {
+      "id": "P4",
+      "name": "分镜与布局",
+      "desc": "storyboard.md + episode.ts",
+      "npm": [],
+      "mode": "mixed",
+      "summary": "静音也能看懂，一个事实只出现一次",
+      "priority": 3,
+      "priorityLabel": "前2秒",
+      "musts": [
+        "静音可理解",
+        "一事实不重复",
+        "每幕一主动作"
+      ]
+    },
+    {
+      "id": "P5",
+      "name": "素材准备",
+      "desc": "本地 SVG + 图片授权",
+      "npm": [
+        "icons:index"
+      ],
+      "mode": "auto",
+      "summary": "本地素材可离线渲染",
+      "priority": 3,
+      "priorityLabel": "前2秒",
+      "musts": [
+        "不访问远程素材",
+        "SVG不拉伸",
+        "授权/非现场完整"
+      ]
+    },
+    {
+      "id": "P6",
+      "name": "声音设计",
+      "desc": "分场景配音 + BGM + 时间轴",
+      "npm": [
+        "timing:episode",
+        "bgm:select",
+        "bgm:verify"
+      ],
+      "mode": "mixed",
+      "summary": "声音站得住：听清、逐字、同步、无爆音",
+      "priority": 3,
+      "priorityLabel": "前2秒",
+      "musts": [
+        "手机外放可听清",
+        "字幕逐字一致",
+        "帧数来自真实配音",
+        "高潮同步落点",
+        "无爆音"
+      ]
+    },
+    {
+      "id": "P7",
+      "name": "关键帧检查",
+      "desc": "关键帧 visual-verdict ≥ 90",
+      "npm": [],
+      "mode": "decision",
+      "summary": "关键帧视觉评分≥90",
+      "priority": 4,
+      "priorityLabel": "技术",
+      "musts": [
+        "关键帧≥90分"
+      ]
+    },
+    {
+      "id": "P8",
+      "name": "局部预览",
+      "desc": "3-6 秒局部片段",
+      "npm": [
+        "render:preview"
+      ],
+      "mode": "auto",
+      "summary": "动、静连续播放都成立",
+      "priority": 4,
+      "priorityLabel": "技术",
+      "musts": [
+        "动态播放成立",
+        "静态通过≠动态通过"
+      ]
+    },
+    {
+      "id": "P9",
+      "name": "完整预览",
+      "desc": "低清完整预览 + 独立终检",
+      "npm": [
+        "render:preview"
+      ],
+      "mode": "decision",
+      "summary": "完整预览+独立终检，只改一个变量",
+      "priority": 4,
+      "priorityLabel": "技术",
+      "musts": [
+        "五项+终检通过",
+        "只改一个变量",
+        "无结构性修改"
+      ]
+    },
+    {
+      "id": "P10",
+      "name": "高清成片校验",
+      "desc": "高清渲染 + lint/verify",
+      "npm": [
+        "render",
+        "lint",
+        "verify"
+      ],
+      "mode": "auto",
+      "summary": "高清技术校验全过",
+      "priority": 4,
+      "priorityLabel": "技术",
+      "musts": [
+        "1080×1920 30fps",
+        "H.264+AAC",
+        "完整解码无错",
+        "无削波"
+      ]
+    },
+    {
+      "id": "P11",
+      "name": "平台 UI 验收",
+      "desc": "平台截图遮挡检查",
+      "npm": [],
+      "mode": "decision",
+      "summary": "平台UI不遮挡关键信息",
+      "priority": 5,
+      "priorityLabel": "平台",
+      "musts": [
+        "日期/数字/人脸/来源/字幕不被遮挡"
+      ]
+    },
+    {
+      "id": "P11.5",
+      "name": "平台活动匹配",
+      "desc": "发布前当天只读检查活动中心，强/弱/不匹配分级并写入发布信息.md",
+      "mode": "decision",
+      "npm": [],
+      "summary": "活动当天重读、不造假、未授权只建议",
+      "priority": 5,
+      "priorityLabel": "平台",
+      "musts": [
+        "活动发布当天重读",
+        "不为流量改主旨",
+        "未授权只建议不报名发布"
+      ]
+    },
+    {
+      "id": "P12",
+      "name": "发布与复盘",
+      "desc": "发布包 + 复盘记录",
+      "npm": [
+        "verify"
+      ],
+      "mode": "mixed",
+      "summary": "交接校验、回答唯一变量、T+7d回写",
+      "priority": 5,
+      "priorityLabel": "平台",
+      "musts": [
+        "交接SHA-256/实验ID/唯一变量",
+        "回答唯一变量",
+        "T+7d回写成熟结论",
+        "发布包 6 件套齐全",
+        "manifest schemaVersion/engagement/个人IP 已记录",
+        "SHA-256 与成片一致"
+      ]
+    }
+  ],
+  "$schema": "./config.schema.json"
+}

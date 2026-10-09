@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.1",
+  "id": "2026-01-01-demo",
+  "version": "v01",
+  "publishDate": "2026-01-01",
+  "targetDate": "2006-01-01",
+  "title": "二十年前的今天，一台没人看好的机器被摆上了柜台",
+  "composition": "Demo-2006-01-01",
+  "format": "daily-history",
+  "series": "二十年前的今天",
+  "dateRelationship": "exact-date",
+  "aiDisclosureRecommended": true,
+  "musicPlatformVerificationRequired": false,
+  "sources": [
+    "权威媒体 2006-01-01 报道",
+    "行业年鉴",
+    "公开年报"
+  ],
+  "engagement": {
+    "primaryGoal": "series",
+    "firstComment": "你还记得当年柜台前的那块价签吗？说说你第一次见到它的场景。",
+    "nextEpisodePromise": "明天继续回到二十年前，看另一个价格改变命运的故事。",
+    "collectionName": "二十年前的今天",
+    "profileAction": "进入主页查看《二十年前的今天》合集连看",
+    "replyPrompts": [
+      {
+        "trigger": "memory",
+        "intent": "接住用户经历并追问一个具体细节"
+      },
+      {
+        "trigger": "fact-question",
+        "intent": "提供来源和统计口径，不扩大原结论"
+      }
+    ]
+  },
+  "productionChecks": {
+    "preview": "v01 首版规划：关键帧评分通过",
+    "personalIp": {
+      "decision": "omitted",
+      "rationale": "本期证据为报纸版式与数据对比，完整支撑叙事，没有需要主持人承担的动作职责。"
+    }
+  },
+  "status": "pending",
+  "durationSeconds": 55.0,
+  "assets": {
+    "video": "video.mp4",
+    "douyinCover": "cover-douyin-3x4.png",
+    "wechatCover": "cover-wechat-6x7.png",
+    "publishCopy": "发布信息.md",
+    "sources": "来源与核对.md"
+  },
+  "sha256": {
+    "video.mp4": "5c4eb8df9c4f154b16725a37d31cde594669e4fedb678acc7d4a2adc5b9ac8d0",
+    "cover-douyin-3x4.png": "12df2365aaf5b958e9caf162484cb9951b56ad88f3432962ed21aa499259f632",
+    "cover-wechat-6x7.png": "e977408a3e420d4bca2ab226407739e31835190065f3d77fba9c3296ad222fa9"
+  }
+}

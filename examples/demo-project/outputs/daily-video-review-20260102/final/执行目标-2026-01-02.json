@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "sourceReviewDate": "2026-01-02",
+  "generatedAt": "2026-01-02T10:00:00+08:00",
+  "reviewStage": "T+7d",
+  "finalDecisionAllowed": true,
+  "weakestLink": "开头",
+  "nextAction": "下一条只把核心结论提前到第 1 秒，封面、主体结构、时长和结尾保持不变",
+  "preserve": "保留栏目识别、历史日期、正式来源、封面骨架、开头冲突类型与固定收尾",
+  "validationMetrics": ["前2秒跳出率", "前5秒留存"],
+  "singleVariable": true,
+  "status": "ready"
+}

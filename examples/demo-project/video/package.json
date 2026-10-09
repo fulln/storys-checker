@@ -1,0 +1,31 @@
+{
+  "name": "demo-video",
+  "private": true,
+  "description": "示例 Remotion 工程（供 Storys Checker 扫描）",
+  "dependencies": {
+    "remotion": "^4.0.0",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/captions": "^4.0.0",
+    "@remotion/transitions": "^4.0.0"
+  },
+  "scripts": {
+    "dev": "remotion studio --no-open",
+    "build": "remotion bundle",
+    "lint": "eslint src",
+    "test": "node --test",
+    "verify": "zsh scripts/verify-output.sh",
+    "voice:clone": "node --env-file-if-exists=.env scripts/clone-minimax-voice.mjs",
+    "voice:episode": "node --env-file-if-exists=.env scripts/generate-episode-voiceover.mjs",
+    "timing:episode": "node scripts/rebuild-episode-timing.mjs",
+    "bgm": "node scripts/generate-bgm-library.mjs",
+    "bgm:select": "node scripts/select-bgm.mjs",
+    "bgm:verify": "node scripts/verify-bgm-library.mjs",
+    "icons:index": "node scripts/index-icons.mjs",
+    "data:demo": "node scripts/fetch-demo-history.mjs",
+    "topics": "node scripts/topic-discovery.mjs",
+    "render:preview": "remotion render Demo-2006-01-01 out/demo-preview.mp4 --scale=0.5 --crf=24",
+    "render": "remotion render Demo-2006-01-01 out/demo.mp4 --crf=18",
+    "still:demo:3x4": "remotion still Cover-Demo-3x4 out/demo-formal/cover-douyin-3x4.png",
+    "still:demo:6x7": "remotion still Cover-Demo-6x7 out/demo-formal/cover-wechat-6x7.png"
+  }
+}
