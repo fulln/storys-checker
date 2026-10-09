@@ -39,7 +39,7 @@ open panel.html   # 也可用 Agent App 的 HTML 预览打开生成的快照
 在本地 Agent App 中打开本仓库，把 Agent 的命令工作目录设为仓库根目录。首次体验可让 Agent 运行 demo 并预览生成的 `panel.html`。
 
 ```bash
-git clone <your-repo> storys-checker
+git clone https://github.com/fulln/storys-checker.git
 cd storys-checker
 
 npm run demo            # 用 examples/demo-project 生成 panel.html，交给 App 预览
@@ -54,6 +54,8 @@ npm run build           # 扫描 + 生成自包含的 panel.html
 ## 在本地 Agent App 中使用
 
 这个项目由本地 Agent App 中的 Agent 调用命令和读取文件。运行入口是 Node.js 脚本和本地面板；Agent App 提供本机命令执行、文件访问和预览能力。具体调用流程见 [Agent App 使用说明](./docs/AGENT_APP.md)。
+
+仓库根目录的 [AGENTS.md](./AGENTS.md) 提供检查器操作说明，支持读取该文件的 Agent 打开仓库后可以按它执行扫描、检查和门禁。这个仓库本身不是视频生产 Skill，也不负责从选题生成可发布成片。`examples/demo-project` 中的工作流文档和脚本 Skill 只用于演示；示例 MP3、MP4、PNG 是不可播放的占位文件。真实视频制作需要另行接入自己的 Remotion 项目、生产规则、素材、配音与渲染环境，并由 Agent 遵循目标项目的指令；检查器会对已配置项目的部分产物和门禁进行检查。
 
 可以直接把下面这段短指令交给 Agent：
 

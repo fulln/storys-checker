@@ -27,5 +27,5 @@ if (score < h.threshold) {
   console.error(`❌ 未通过：健康分 ${score} 低于阈值 ${h.threshold}`);
   process.exit(1);
 }
-console.log('✅ 通过门禁，可以发布');
+console.log('✅ 健康分达到阈值；发布前仍需核验内容、素材授权和成片播放');
 process.exit(0);

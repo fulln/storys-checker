@@ -12,7 +12,7 @@ const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const destination = process.argv[2] && path.resolve(process.argv[2]);
 
 const rootFiles = new Set([
-  'package.json', '.gitignore', 'SECURITY.md',
+  'package.json', '.gitignore', 'SECURITY.md', 'AGENTS.md',
   'README.md', 'CONTRIBUTING.md', 'LICENSE', 'config.example.json', 'config.schema.json',
   'app.js', 'style.css', 'index.html', 'scan.mjs', 'checks.mjs', 'serve.mjs',
   'runner.mjs', 'gate.mjs', 'build-panel.mjs',
@@ -21,7 +21,7 @@ const allowedDirs = new Set(['lib', 'checks', 'scripts', 'examples']);
 const explicitFiles = new Set([
   'lib/project-files.mjs', 'scripts/export-public.mjs', 'tests/server.test.mjs',
   'tests/export-public.test.mjs', 'tests/notifications.test.mjs', 'tests/panel.test.mjs', 'SECURITY.md',
-  'docs/AGENT_APP.md',
+  'docs/AGENT_APP.md', 'AGENTS.md',
   '.github/workflows/ci.yml',
 ]);
 const publicDocs = new Set(['README.md', 'UIUX.md', 'PUBLISHING.md', 'AGENT_APP.md']);
