@@ -1,16 +1,16 @@
 # Storys Checker
 
-本地面板 + 检查引擎，用来**复盘和守护一条 Remotion 视频生产流水线**。
+本地 Agent App 驱动的面板 + 检查引擎，用来**复盘和守护一条 Remotion 视频生产流水线**。
 
 扫描你的视频项目 → 生成一张可双击打开的控制台 → 显示今天的声音/画面/门禁进度 → 跑一遍检查拿到健康分 → 拦住不合格的发布包。
 
 - **零依赖**：只用 Node 内置模块，`git clone` 后不需要 `npm install`。
 - **配置驱动**：项目清单、能力清单、检查项、门禁、修复命令都在 `config.json`，改数据不改引擎。
-- **可嵌入**：`gate.mjs` 按健康分返回退出码，可直接接 git hook / CI。
+- **可被 Agent 驱动**：有本地命令和文件访问能力的 Agent 可以执行扫描、检查、修复和门禁，并读取结构化报告；面板用于预览和人工操作。
 
 ```bash
-npm run demo      # 用自带的示例项目跑一遍（推荐先看效果）
-open panel.html   # 双击也行
+npm run demo      # 用自带的示例项目跑一遍
+open panel.html   # 也可用 Agent App 的 HTML 预览打开生成的快照
 ```
 
 ---
@@ -18,13 +18,14 @@ open panel.html   # 双击也行
 ## 目录
 
 - [快速开始](#快速开始)
+- [在本地 Agent App 中使用](#在本地-agent-app-中使用)
 - [面板长什么样](#面板长什么样)
 - [配置](#配置)
 - [检查引擎](#检查引擎)
 - [健康分 / 历史 / 门禁 / 通知](#健康分--历史--门禁--通知)
 - [实时进程与介入](#实时进程与介入)
 - [扩展：写一个检查插件](#扩展写一个检查插件)
-- [接入 CI](#接入-ci)
+- [接入自动化（可选）](#接入自动化可选)
 - [目录结构](#目录结构)
 - [隐私与安全](#隐私与安全)
 - [发布到公共仓库](#发布到公共仓库)
@@ -35,17 +36,30 @@ open panel.html   # 双击也行
 
 要求：Node.js ≥ 22，推荐 Node.js 24 LTS（使用 Node 内置模块，无需安装第三方依赖）。
 
+在本地 Agent App 中打开本仓库，把 Agent 的命令工作目录设为仓库根目录。首次体验可让 Agent 运行 demo 并预览生成的 `panel.html`。
+
 ```bash
 git clone <your-repo> storys-checker
 cd storys-checker
 
-npm run demo            # 用 examples/demo-project 生成 panel.html
-open panel.html         # 直接看，无需启动本地服务
+npm run demo            # 用 examples/demo-project 生成 panel.html，交给 App 预览
 
 npm run setup           # 生成 config.json（复制自 config.example.json）
-$EDITOR config.json     # 把 projects 指向你自己的项目
+# 让 Agent 将 config.json 的 projects 指向你自己的项目
 npm run build           # 扫描 + 生成自包含的 panel.html
 ```
+
+首次使用自带 demo 时，不要覆盖已有的 `config.json`、`config.local.json` 或其他私有配置；只在没有配置时运行初始化。不要使用会强制覆盖文件的初始化命令。
+
+## 在本地 Agent App 中使用
+
+这个项目由本地 Agent App 中的 Agent 调用命令和读取文件。运行入口是 Node.js 脚本和本地面板；Agent App 提供本机命令执行、文件访问和预览能力。具体调用流程见 [Agent App 使用说明](./docs/AGENT_APP.md)。
+
+可以直接把下面这段短指令交给 Agent：
+
+> 在 Storys Checker 工具仓库目录确认当前配置，执行 `node scan.mjs` 和 `node checks.mjs`，读取 `check-report.json`。需要修复时，按 findings 的 fixId 执行 `node checks.mjs --fix <fixId>` 并复检。需要门禁判断时运行 `node gate.mjs`，汇报健康分、error/warn/info 数量、未解决 finding 和 gate 退出码。需要预览时，打开生成的 `panel.html`；需要实时操作时通过 App 的本地任务工具启动 `npm start`，在其浏览器预览中打开 `http://127.0.0.1:8787`。
+
+Agent 读取 `data.json`、`check-report.json` 和 `fix-result.json` 等 JSON 结果、`history/` 下的 JSONL 历史与 `logs/` 下的文本日志。`panel.html` 是可独立预览的静态快照；实时运行、修复和历史查询由本机服务提供。
 
 两种打开方式：
 
@@ -61,7 +75,7 @@ node scan.mjs --config ./my-config.json
 STORYS_CHECKER_CONFIG=./my-config.json npm start
 ```
 
-配置解析顺序：`--config` → `STORYS_CHECKER_CONFIG` → `config.local.json` → `config.json` → `config.example.json`。
+配置解析顺序：命令行 `--config` → `STORYS_CHECKER_CONFIG` → `config.local.json` → `config.json` → `config.example.json`。
 `config.local.json` 适合放不想提交的私有配置，支持 `"extends": "config.json"` 做局部覆盖。
 
 ---
@@ -177,7 +191,7 @@ STORYS_CHECKER_CONFIG=./my-config.json npm start
 
 ## 检查引擎
 
-`checks.mjs` 是闭环：**检查 → 反馈 → 自动修复 → 复检**。它只校验客观事实与结构，不做内容判断。
+`checks.mjs` 是闭环：**检查 → 反馈 → 自动修复 → 复检**。它只校验客观事实与结构，不做内容判断。命令退出 0 只表示检查程序执行完成；必须读取 `check-report.json` 才能知道 findings，退出 0 不等于 finding 数为 0，也不等于创意事实已经核验。
 
 内置检查（`checks/` 目录，可通过 `checks.enabled` 开关）：
 
@@ -255,6 +269,8 @@ node gate.mjs                  # 健康分低于阈值 → 退出码 1
 node gate.mjs --project my-video
 ```
 
+`gate.mjs` 按 `config.health.threshold` 判断健康分：达到阈值退出 0，低于阈值退出 1；未知项目通常退出 2。gate 退出 0 仍不代表所有 finding 为 0 或创意事实已核验。
+
 - 通知：`config.notify` 填 webhook（钉钉/飞书/Slack）或 shell 命令，检查失败或健康分低于阈值时触发。
 
 ---
@@ -312,7 +328,7 @@ export default {
 
 ## 本地服务与安全默认值
 
-零第三方依赖，**不需要 `npm install`**。复制配置后运行 `npm start`，服务固定监听 `127.0.0.1:8787`，仅供本机浏览器使用。
+零第三方依赖，**不需要 `npm install`**。按需运行 `npm start`，服务固定监听 `127.0.0.1:8787`，仅供本机 Agent App 浏览器预览和本机人工操作使用。
 
 面板可以运行项目命令并写项目文件，请只在自己的可信环境中使用。设置 `STORYS_CHECKER_READONLY=1` 可隐藏运行、修复和保存按钮，并由服务端拒绝写接口；扫描与检查仍可启动工具子进程。设置 `STORYS_CHECKER_STATE_DIR` 可把运行期状态移到单独的本地目录，便于备份或清理。
 
@@ -320,7 +336,7 @@ export default {
 
 ---
 
-## 接入 CI
+## 接入自动化（可选）
 
 ```yaml
 # .github/workflows/gate.yml

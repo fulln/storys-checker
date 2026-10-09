@@ -14,7 +14,7 @@ npm run export:public -- /tmp/storys-checker-public
 
 原有提交中的历史内容仍保存在源码仓库内。首次公开时在导出目录建立新历史；不能在源码仓库中仅执行 `git init` 后直接推送，`git init` 不会删除旧提交。
 
-`docs/` 的公开列表仅包含 `README.md`、`UIUX.md` 和本文。
+`docs/` 的公开列表包含 `README.md`、`UIUX.md`、`AGENT_APP.md` 和本文。不要把生产项目的私有规范快照导入公开目录。
 
 ## 2. 验证发行目录
 
@@ -71,7 +71,7 @@ git remote add origin https://github.com/fulln/storys-checker.git
 git push -u origin main
 ```
 
-工具只面向本机运行，直接执行 `npm start` 即可。需要分发 npm 包时，应在验证过的发行目录执行 `npm publish`。`package.json.files` 只包含工具代码、公开文档与示例。
+工具面向本地 Agent App 使用。Agent 在工具仓库目录执行命令并读取 JSON 报告；静态预览可打开 `panel.html`，实时操作可由 Agent 启动 `npm start`，在 App 提供的浏览器预览中打开 `http://127.0.0.1:8787`。需要分发 npm 包时，应在验证过的发行目录执行 `npm publish`。`package.json.files` 只包含工具代码、公开文档与示例。
 
 ## 5. 版本
 

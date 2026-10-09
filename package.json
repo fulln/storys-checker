@@ -1,7 +1,7 @@
 {
   "name": "storys-checker",
   "version": "2.0.0",
-  "description": "本地视频生产控制台：扫描 Remotion/Koboyo 项目、复盘 P0—P12 门禁、健康分、发布包校验与实时进程监控（零依赖）",
+  "description": "供本地 Agent App 调用的视频生产检查工具：扫描 Remotion/Koboyo 项目、门禁、健康分、发布包校验与面板预览（零依赖）",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -40,6 +40,7 @@
     "docs/README.md",
     "docs/UIUX.md",
     "docs/PUBLISHING.md",
+    "docs/AGENT_APP.md",
     "examples/",
     "config.example.json",
     "config.schema.json",

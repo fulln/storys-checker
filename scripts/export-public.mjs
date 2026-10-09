@@ -20,10 +20,11 @@ const rootFiles = new Set([
 const allowedDirs = new Set(['lib', 'checks', 'scripts', 'examples']);
 const explicitFiles = new Set([
   'lib/project-files.mjs', 'scripts/export-public.mjs', 'tests/server.test.mjs',
-  'tests/export-public.test.mjs', 'tests/notifications.test.mjs', 'SECURITY.md',
+  'tests/export-public.test.mjs', 'tests/notifications.test.mjs', 'tests/panel.test.mjs', 'SECURITY.md',
+  'docs/AGENT_APP.md',
   '.github/workflows/ci.yml',
 ]);
-const publicDocs = new Set(['README.md', 'UIUX.md', 'PUBLISHING.md']);
+const publicDocs = new Set(['README.md', 'UIUX.md', 'PUBLISHING.md', 'AGENT_APP.md']);
 
 function usage(message) {
   if (message) console.error(`error: ${message}`);

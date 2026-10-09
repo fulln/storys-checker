@@ -17,12 +17,16 @@
 
 ## 本地验证
 
+项目主要运行在本地 Agent App 中。Agent 在工具仓库目录执行命令并读取 `check-report.json`；面板只在需要预览或人工操作时按需启动。不要新增服务器部署、自动挂载或特定 App SDK 依赖。
+
 ```bash
 npm run demo                 # 示例项目应当 0 error / 0 warn
 npm test                     # HTTP 安全边界与公开导出的回归测试
 node checks.mjs --config config.example.json
 node --check app.js && node --check checks.mjs
 ```
+
+`checks.mjs` 退出 0 只表示检查执行完成，不能代替读取报告。`gate.mjs` 按 `config.health.threshold` 返回门禁结果；退出 0 不等于没有 finding，也不等于创意事实已核验。配置优先级为 `--config` → `STORYS_CHECKER_CONFIG` → `config.local.json` → `config.json` → `config.example.json`。
 
 提交前请确认 `npm run demo` 的健康分不下降，且没有新增 error。
 
@@ -34,6 +38,7 @@ node --check app.js && node --check checks.mjs
 
 - `docs/UIUX.md` 是本面板自己的 UI/UX 规范，改前端请先读它。
 - `docs/README.md` 列出公开工具文档。
+- `docs/AGENT_APP.md` 说明本地 Agent App 的调用、报告和面板预览流程。
 - 示例媒体使用文本占位文件；引入真实素材时须记录来源、许可证与再分发条件。
 - 本项目支持 macOS / Linux。Windows 尚未验证，shell 命令和进程组控制存在平台差异。
 - 安全问题按 `SECURITY.md` 报告。
