@@ -25,6 +25,11 @@ async function fixture() {
   await fs.writeFile(path.join(root, 'docs/another-private.md'), 'private');
   await fs.writeFile(path.join(root, 'config.json'), 'private configuration');
   await fs.writeFile(path.join(root, '.env'), 'private credentials');
+  await fs.writeFile(path.join(root, 'Dockerfile'), 'obsolete deployment');
+  await fs.writeFile(path.join(root, 'docker-compose.yml'), 'obsolete deployment');
+  await fs.writeFile(path.join(root, 'docs/DEPLOY.md'), 'obsolete deployment');
+  await fs.mkdir(path.join(root, 'deploy'));
+  await fs.writeFile(path.join(root, 'deploy/service'), 'obsolete deployment');
   await fs.mkdir(path.join(root, 'examples/demo'), { recursive: true });
   await fs.writeFile(path.join(root, 'examples/demo/.env'), 'private nested credentials');
   await run('git', ['init', '-q'], { cwd: root });
@@ -43,7 +48,7 @@ test('exports runtime files and excludes private docs', async () => {
   assert.equal(await fs.readFile(path.join(destination, 'lib/project-files.mjs'), 'utf8'), '// new runtime helper');
   assert.equal(await fs.readFile(path.join(destination, 'scripts/export-public.mjs'), 'utf8').then(Boolean), true);
   await assert.rejects(fs.stat(path.join(destination, 'docs/soul.md')), { code: 'ENOENT' });
-  for (const file of ['.git', 'config.json', '.env', 'examples/demo/.env', 'docs/another-private.md']) {
+  for (const file of ['.git', 'config.json', '.env', 'examples/demo/.env', 'docs/another-private.md', 'Dockerfile', 'docker-compose.yml', 'deploy', 'docs/DEPLOY.md']) {
     await assert.rejects(fs.stat(path.join(destination, file)), { code: 'ENOENT' });
   }
 });

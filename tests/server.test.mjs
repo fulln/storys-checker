@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
+import { request as httpRequest } from 'node:http';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 
@@ -59,7 +60,7 @@ async function fixture(t, overrides = {}) {
   let timer;
   const result = await Promise.race([ready, exited.then(() => 'exit'), new Promise((resolve) => { timer = setTimeout(() => resolve('timeout'), 5000); })]);
   clearTimeout(timer);
-  return { project, sibling, dir, child, result, output: () => output,
+  return { project, sibling, dir, child, result, url: `http://127.0.0.1:${port}`, output: () => output,
     request: (url, options) => fetch(`http://127.0.0.1:${port}${url}`, options) };
 }
 
@@ -95,26 +96,57 @@ test('project files cannot cross directory or symlink boundaries', async (t) => 
   assert.equal(fs.readFileSync(path.join(f.project, 'new/nested.md'), 'utf8'), 'saved');
 });
 
-test('incomplete credentials and unauthenticated network binding fail at startup', async (t) => {
-  for (const env of [{ STORYS_CHECKER_USER: 'admin' }, { STORYS_CHECKER_PASSWORD: 'secret' },
-    { STORYS_CHECKER_HOST: '0.0.0.0' }, { STORYS_CHECKER_USER: 'admin', STORYS_CHECKER_PASSWORD: 'change-me-please' },
-    { STORYS_CHECKER_USER: 'admin', STORYS_CHECKER_PASSWORD: '换成强密码' }]) {
-    await t.test(JSON.stringify(env), async (t) => {
-      const f = await fixture(t, env);
-      assert.equal(f.result, 'exit', f.output());
-      assert.notEqual(f.child.exitCode, 0);
-    });
-  }
+test('local startup ignores network and credential settings', async (t) => {
+  const f = await fixture(t, { HOST: '0.0.0.0', STORYS_CHECKER_HOST: '0.0.0.0',
+    STORYS_CHECKER_USER: 'admin', STORYS_CHECKER_PASSWORD: '' });
+  assert.equal(f.result, 'ready', f.output());
+  const response = await f.request('/api/meta');
+  assert.equal(response.status, 200);
+  const meta = await response.json();
+  assert.equal(meta.host, '127.0.0.1');
+  assert.equal(meta.authRequired, false);
+  assert.equal((await f.request('/app.js')).status, 200);
 });
 
-test('authentication protects APIs while minimal liveness remains available', async (t) => {
-  const f = await fixture(t, { STORYS_CHECKER_USER: 'admin', STORYS_CHECKER_PASSWORD: 'test-secret' });
+test('non-local Host and cross-origin API requests are rejected', async (t) => {
+  const f = await fixture(t);
   assert.equal(f.result, 'ready', f.output());
-  assert.equal((await f.request('/api/healthz')).status, 200);
-  assert.equal((await f.request('/api/meta')).status, 401);
-  assert.equal((await f.request('/app.js')).status, 401);
-  assert.equal((await f.request('/api/meta', { headers: { Authorization: `Basic ${Buffer.from('admin:wrong').toString('base64')}` } })).status, 401);
-  assert.equal((await f.request('/api/meta', { headers: { Authorization: `Basic ${Buffer.from('admin:test-secret').toString('base64')}` } })).status, 200);
+  const status = await new Promise((resolve, reject) => {
+    const req = httpRequest(`${f.url}/api/meta`, { headers: { Host: 'untrusted.example' } }, (res) => {
+      res.resume();
+      resolve(res.statusCode);
+    });
+    req.on('error', reject);
+    req.end();
+  });
+  assert.equal(status, 403);
+  assert.equal((await f.request('/api/meta', { headers: { Origin: 'https://untrusted.example' } })).status, 403);
+  assert.equal((await f.request('/api/meta')).status, 200);
+});
+
+test('local users can save prompts and run configured project commands', async (t) => {
+  const f = await fixture(t);
+  assert.equal(f.result, 'ready', f.output());
+  const saved = await f.request('/api/prompt/save', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ project: 'test', path: 'prompt.md', content: 'local prompt' }) });
+  assert.equal(saved.status, 200);
+  assert.equal(fs.readFileSync(path.join(f.project, 'prompt.md'), 'utf8'), 'local prompt');
+  const history = await (await f.request('/api/prompt/history?project=test&path=prompt.md')).json();
+  assert.equal(history.length, 1);
+  assert.equal(history[0].content, 'local prompt');
+  const response = await f.request('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ project: 'test', cwd: 'root', command: "printf 'local-run'" }) });
+  assert.equal(response.status, 200);
+  const process = await response.json();
+  let finished;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const processes = await (await f.request('/api/processes')).json();
+    finished = processes.recent.find((p) => p.id === process.id);
+    if (finished) break;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.equal(finished?.status, 'done');
+  assert.match(finished.log, /local-run/);
 });
 
 test('readonly blocks all project mutations', async (t) => {

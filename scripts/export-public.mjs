@@ -13,18 +13,17 @@ const destination = process.argv[2] && path.resolve(process.argv[2]);
 
 const rootFiles = new Set([
   'package.json', '.gitignore', 'SECURITY.md',
-  'README.md', 'CONTRIBUTING.md', 'LICENSE', 'Dockerfile', 'docker-compose.yml',
-  '.dockerignore', '.env.example', 'config.example.json', 'config.schema.json',
+  'README.md', 'CONTRIBUTING.md', 'LICENSE', 'config.example.json', 'config.schema.json',
   'app.js', 'style.css', 'index.html', 'scan.mjs', 'checks.mjs', 'serve.mjs',
   'runner.mjs', 'gate.mjs', 'build-panel.mjs',
 ]);
-const allowedDirs = new Set(['lib', 'checks', 'scripts', 'deploy', 'examples']);
+const allowedDirs = new Set(['lib', 'checks', 'scripts', 'examples']);
 const explicitFiles = new Set([
   'lib/project-files.mjs', 'scripts/export-public.mjs', 'tests/server.test.mjs',
   'tests/export-public.test.mjs', 'tests/notifications.test.mjs', 'SECURITY.md',
   '.github/workflows/ci.yml',
 ]);
-const publicDocs = new Set(['README.md', 'UIUX.md', 'DEPLOY.md', 'PUBLISHING.md']);
+const publicDocs = new Set(['README.md', 'UIUX.md', 'PUBLISHING.md']);
 
 function usage(message) {
   if (message) console.error(`error: ${message}`);

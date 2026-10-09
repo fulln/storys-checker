@@ -7,10 +7,11 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         node: ['22', '24']
+        os: [ubuntu-latest, macos-latest]
     env:
       STORYS_CHECKER_STATE_DIR: ${{ runner.temp }}/storys-checker-state
     steps:
@@ -29,30 +30,3 @@ jobs:
       - run: npm test
       - run: npm run demo
       - run: node gate.mjs --config config.example.json
-
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - run: docker build -t storys-checker:test .
-      - name: Verify authenticated readonly container
-        run: |
-          docker run -d --name checker --read-only --cap-drop ALL \
-            --security-opt no-new-privileges:true --tmpfs /tmp \
-            -p 127.0.0.1:8787:8787 \
-            -e STORYS_CHECKER_USER=admin -e STORYS_CHECKER_PASSWORD=ci-test-password \
-            -e STORYS_CHECKER_READONLY=1 storys-checker:test
-          for attempt in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8787/api/healthz; then break; fi
-            sleep 1
-          done
-          curl -fsS http://127.0.0.1:8787/api/healthz
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/api/meta)" = 401
-          curl -fsS -u admin:ci-test-password http://127.0.0.1:8787/api/meta
-          test "$(curl -s -o /dev/null -w '%{http_code}' -u admin:ci-test-password \
-            -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8787/api/run)" = 403
-          docker exec checker node -e "fetch('http://127.0.0.1:8787/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-      - if: always()
-        run: docker logs checker; docker rm -fv checker

@@ -1,12 +1,6 @@
-// serve.mjs — 零依赖静态服务器 + 实时扫描接口
-//
-// 部署安全默认值（给其他人部署时尤其重要）：
-//   HOST=127.0.0.1                    默认只监听本机，不暴露到网络
-//   STORYS_CHECKER_USER / _PASSWORD   设置后启用 HTTP Basic Auth（浏览器原生支持，前端无需改动）
-//   STORYS_CHECKER_READONLY=1         只读模式：即使部署到服务器，也不能执行命令或改写被监控项目
-//   --readonly                       同上（命令行开关）
+// serve.mjs — 本地面板服务 + 实时扫描接口
+// 固定监听 127.0.0.1；STORYS_CHECKER_READONLY=1 或 --readonly 可禁止项目写入与命令运行。
 import http from 'node:http';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -16,27 +10,10 @@ import { STATE_DIR, stateFile } from './lib/paths.mjs';
 import { resolveProjectFile } from './lib/project-files.mjs';
 
 const PORT = Number(process.env.PORT) || 8787;
-const HOST = process.env.STORYS_CHECKER_HOST || process.env.HOST || '127.0.0.1';
+const HOST = '127.0.0.1';
 const READONLY = process.env.STORYS_CHECKER_READONLY === '1' || process.argv.includes('--readonly');
-const AUTH_USER = process.env.STORYS_CHECKER_USER || '';
-const AUTH_PASSWORD = process.env.STORYS_CHECKER_PASSWORD || '';
-const AUTH_ENABLED = Boolean(AUTH_USER && AUTH_PASSWORD);
 const ROOT = process.cwd();
 const BODY_LIMIT = 1024 * 1024;
-const LOOPBACK = HOST === 'localhost' || HOST === '::1' || /^127\.(?:\d{1,3}\.){2}\d{1,3}$/.test(HOST);
-
-if ((AUTH_USER || AUTH_PASSWORD) && (!AUTH_USER.trim() || !AUTH_PASSWORD.trim() || AUTH_USER.includes(':'))) {
-  console.error('认证配置错误：STORYS_CHECKER_USER 和 STORYS_CHECKER_PASSWORD 必须同时非空，用户名不能包含冒号');
-  process.exit(1);
-}
-if (['change-me', 'change-me-please', 'changeme', '换成强密码', '强密码', '替换为自己的强密码'].includes(AUTH_PASSWORD)) {
-  console.error('认证配置错误：请将示例密码替换为自己的密码');
-  process.exit(1);
-}
-if (!LOOPBACK && !AUTH_ENABLED) {
-  console.error('拒绝启动：非回环监听必须同时设置 STORYS_CHECKER_USER 和 STORYS_CHECKER_PASSWORD');
-  process.exit(1);
-}
 
 // 只读模式下禁止的接口：会执行命令或改写被监控项目
 const WRITE_API = new Set(['/api/run', '/api/kill', '/api/fix', '/api/file', '/api/prompt/save']);
@@ -52,9 +29,6 @@ const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
 };
 
 function rescan() {
@@ -112,29 +86,6 @@ function readBody(req) {
   });
 }
 
-/** HTTP Basic 认证校验（常时间比较，避免时序泄露）。 */
-function isAuthorized(req) {
-  const header = req.headers.authorization || '';
-  if (!header.startsWith('Basic ')) return false;
-  let decoded = '';
-  try {
-    decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
-  } catch {
-    return false;
-  }
-  const index = decoded.indexOf(':');
-  const user = index === -1 ? decoded : decoded.slice(0, index);
-  const password = index === -1 ? '' : decoded.slice(index + 1);
-  return safeEqual(user, AUTH_USER) && safeEqual(password, AUTH_PASSWORD);
-}
-
-function safeEqual(a, b) {
-  const bufA = Buffer.from(String(a));
-  const bufB = Buffer.from(String(b));
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
-
 function appVersion() {
   try {
     return JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version || '0.0.0';
@@ -172,42 +123,29 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'no-store');
 
-  // 最小存活探针不包含配置或项目数据，允许无凭据容器 healthcheck。
-  if (url.pathname === '/api/healthz' && req.method === 'GET') return json(200, { ok: true });
-
-  // 未认证的本机服务拒绝非本机 Host，防止浏览器 DNS rebinding。
-  if (!AUTH_ENABLED) {
-    const hostname = new URL(`http://${req.headers.host || ''}`).hostname;
-    if (!['localhost', '127.0.0.1', '[::1]'].includes(hostname) && hostname !== HOST) {
-      return json(403, { error: 'forbidden host' });
-    }
+  // 本机服务拒绝非本机 Host，防止浏览器 DNS rebinding。
+  const hostname = new URL(`http://${req.headers.host || ''}`).hostname;
+  if (!['localhost', HOST].includes(hostname)) {
+    return json(403, { error: 'forbidden host' });
   }
-  if (url.pathname.startsWith('/api/') && req.headers.origin && req.headers.origin !== `http://${req.headers.host}` && req.headers.origin !== `https://${req.headers.host}`) {
+  if (url.pathname.startsWith('/api/') && req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) {
     return json(403, { error: 'forbidden origin' });
   }
 
-  // 1) 认证（Basic；浏览器原生弹窗，前端无需改动）
-  if (AUTH_ENABLED && !isAuthorized(req)) {
-    res.writeHead(401, {
-      'WWW-Authenticate': 'Basic realm="Storys Checker", charset="UTF-8"',
-      'Content-Type': 'text/plain; charset=utf-8',
-    });
-    return res.end('需要登录');
-  }
-
-  // 2) 只读模式拦截（GET /api/file 仍允许，只拦写入）
+  // 只读模式拦截（GET /api/file 仍允许，只拦写入）
   const isWrite = WRITE_API.has(url.pathname) && (url.pathname === '/api/file' ? req.method === 'POST' : true);
   if (READONLY && isWrite) {
     return json(403, { error: 'readonly', message: '服务以只读模式启动，已拒绝执行命令或写入项目文件' });
   }
 
-  // 3) 运维探针 / 元信息（容器 healthcheck、前端能力探测）
+  // 本地存活状态与前端能力探测。
+  if (url.pathname === '/api/healthz' && req.method === 'GET') return json(200, { ok: true });
   if (url.pathname === '/api/meta') {
     return json(200, {
       app: 'storys-checker',
       version: appVersion(),
       readonly: READONLY,
-      authRequired: AUTH_ENABLED,
+      authRequired: false,
       host: HOST,
       port: PORT,
       configFile: path.relative(ROOT, config.__file) || null,
@@ -439,12 +377,11 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   // 首次启动自动扫描一次，保证 data.json 存在
   if (!fs.existsSync(stateFile('data.json'))) rescan();
-  const shown = HOST === '0.0.0.0' || HOST === '::' ? 'localhost' : HOST;
   console.log('');
   console.log('  Storys Checker 面板已启动');
-  console.log(`   -> http://${shown}:${PORT}`);
+  console.log(`   -> http://${HOST}:${PORT}`);
   console.log(`   配置：${path.relative(ROOT, config.__file)}  |  项目：${PROJECTS.map((p) => p.id).join(', ') || '(无)'}`);
-  console.log(`   监听：${HOST}:${PORT}  |  认证：${AUTH_ENABLED ? 'Basic Auth 已启用' : '未启用（仅限本机使用）'}`);
+  console.log(`   监听：${HOST}:${PORT}（仅本机）`);
   console.log(`   模式：${READONLY ? '只读（禁止执行命令 / 写入文件）' : '可写（可运行命令、自动修复）'}`);
   console.log('');
 });

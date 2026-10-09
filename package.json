@@ -39,16 +39,10 @@
     "scripts/",
     "docs/README.md",
     "docs/UIUX.md",
-    "docs/DEPLOY.md",
     "docs/PUBLISHING.md",
-    "deploy/",
     "examples/",
     "config.example.json",
     "config.schema.json",
-    "Dockerfile",
-    "docker-compose.yml",
-    ".dockerignore",
-    ".env.example",
     "README.md",
     "CONTRIBUTING.md",
     "LICENSE",
@@ -67,8 +61,6 @@
     "check:fix": "node checks.mjs --fix",
     "watch": "node checks.mjs --watch",
     "gate": "node gate.mjs",
-    "start:readonly": "node serve.mjs --readonly",
-    "docker:build": "docker build -t storys-checker:$(node -p \"require('./package.json').version\") .",
-    "docker:up": "docker compose up -d"
+    "start:readonly": "node serve.mjs --readonly"
   }
 }

@@ -11,6 +11,6 @@ fix-result.json
 logs/
 history/
 
-# 部署
+# 本地环境与自定义状态目录
 .env
 state/

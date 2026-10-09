@@ -24,7 +24,6 @@ open panel.html   # 双击也行
 - [健康分 / 历史 / 门禁 / 通知](#健康分--历史--门禁--通知)
 - [实时进程与介入](#实时进程与介入)
 - [扩展：写一个检查插件](#扩展写一个检查插件)
-- [部署给别人用](#部署给别人用)
 - [接入 CI](#接入-ci)
 - [目录结构](#目录结构)
 - [隐私与安全](#隐私与安全)
@@ -41,7 +40,7 @@ git clone <your-repo> storys-checker
 cd storys-checker
 
 npm run demo            # 用 examples/demo-project 生成 panel.html
-open panel.html         # 直接看，无需服务器
+open panel.html         # 直接看，无需启动本地服务
 
 npm run setup           # 生成 config.json（复制自 config.example.json）
 $EDITOR config.json     # 把 projects 指向你自己的项目
@@ -268,10 +267,9 @@ node gate.mjs --project my-video
 - 从当前阶段直接运行 `npm run …`，或在「运行命令」里自由输入
 - 每 2 秒拉取日志、显示计时、一键**中断**（杀进程组）
 
-运行中的命令日志写入 `logs/`；服务器重启后内存里的进程列表会清空，但日志文件保留。
+运行中的命令日志写入 `logs/`；重新启动本地服务后内存里的进程列表会清空，但日志文件保留。
 
-> ⚠️ 本地服务器提供 `/api/file`（读写项目文件）与 `/api/run`（执行命令）能力，**默认只监听本机**。
-> 不要把它暴露到公网；如需远程访问请自行加认证与反向代理。
+> ⚠️ 本地服务提供 `/api/file`（读写项目文件）与 `/api/run`（执行命令）能力，只监听本机回环地址。请只在自己的可信环境中使用。
 
 ---
 
@@ -312,45 +310,13 @@ export default {
 
 ---
 
-## 部署给别人用
+## 本地服务与安全默认值
 
-零第三方依赖，**不需要 `npm install`**。四种方式详见 [`docs/DEPLOY.md`](./docs/DEPLOY.md)：
+零第三方依赖，**不需要 `npm install`**。复制配置后运行 `npm start`，服务固定监听 `127.0.0.1:8787`，仅供本机浏览器使用。
 
-| 方式 | 命令 | 适用 |
-| --- | --- | --- |
-| 本机 | `npm start` | 面板和被监控项目在同一台机器（推荐，能运行项目脚本） |
-| systemd | `deploy/systemd/storys-checker.service` | Linux 服务器常驻 |
-| launchd | `deploy/launchd/com.storys-checker.plist` | macOS 常驻 |
-| Docker | `cp .env.example .env && docker compose up -d` | 只读监控对方的项目，镜像里不需要任何工具链 |
+面板可以运行项目命令并写项目文件，请只在自己的可信环境中使用。设置 `STORYS_CHECKER_READONLY=1` 可隐藏运行、修复和保存按钮，并由服务端拒绝写接口；扫描与检查仍可启动工具子进程。设置 `STORYS_CHECKER_STATE_DIR` 可把运行期状态移到单独的本地目录，便于备份或清理。
 
-```bash
-cp config.example.json config.json   # 改成要监控的项目
-npm run build                        # 自包含 panel.html（单文件，可直接发给别人双击看）
-npm start                            # 或起服务
-```
-
-### 安全默认值
-
-面板能运行被监控项目的命令（`/api/run`）并写项目文件，所以开箱默认是「本机 + 无认证」。
-对外部署时：
-
-```bash
-HOST=127.0.0.1 \
-STORYS_CHECKER_USER=admin \
-STORYS_CHECKER_PASSWORD='强密码' \
-STORYS_CHECKER_READONLY=1 \
-npm start
-```
-
-- `HOST` 默认 `127.0.0.1` —— 不显式设置就不会暴露到网络
-- 同时设置非空的 `STORYS_CHECKER_USER` 与 `STORYS_CHECKER_PASSWORD` 即启用 **HTTP Basic Auth**（浏览器原生弹窗）；缺少一项或使用示例密码会拒绝启动
-- 非回环监听必须启用认证，否则拒绝启动；可写模式允许登录者使用服务进程的 shell 权限，只适合可信用户
-- `STORYS_CHECKER_READONLY=1` 只读模式：前端隐藏运行/修复/保存按钮，服务端对所有写接口返回 `403`
-- 只读模式仍会为 scan/check 启动工具子进程，自动禁用 `config.notify.command`；webhook 通知仍按配置发送
-- `STORYS_CHECKER_STATE_DIR` 把运行期状态（`data.json`、`history/`、`logs/`…）移出代码目录，
-  容器与只读镜像必需
-
-运维探针：`GET /api/healthz` → `{"ok":true}`（无需认证，只返回存活状态）；元信息：`GET /api/meta`（按配置认证）。写接口要求 JSON 请求体，上限 1 MiB。
+`GET /api/healthz` 返回 `{"ok":true}`；写接口要求 JSON 请求体，上限 1 MiB。
 
 ---
 
@@ -394,16 +360,13 @@ runner.mjs           进程管理（后台运行 + 日志环形缓冲 + 进程�
 serve.mjs            零依赖 HTTP 服务 + /api/*
 build-panel.mjs      把 data.json 内嵌进 index.html → panel.html
 index.html/app.js/style.css   面板前端
-docs/                工具文档（UIUX / 部署 / 公开发布）
+docs/                工具文档（UIUX / 本地使用 / 公开发布）
 examples/demo-project         可直接跑通的示例项目
 scripts/init.mjs     初始化 config.json
 ```
 
 运行时产物（默认已 gitignore，不会提交）：`data.json`、`panel.html`、`check-report.json`、
 `fix-result.json`、`history/`、`logs/`。用 `STORYS_CHECKER_STATE_DIR` 可以把它们统一挪到独立目录。
-
-部署相关文件：`Dockerfile`、`docker-compose.yml`、`.env.example`、`deploy/systemd/`、`deploy/launchd/`、
-`docs/DEPLOY.md`。
 
 ---
 
