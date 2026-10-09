@@ -12,8 +12,6 @@ jobs:
       matrix:
         node: ['22', '24']
         os: [ubuntu-latest, macos-latest]
-    env:
-      STORYS_CHECKER_STATE_DIR: ${{ runner.temp }}/storys-checker-state
     steps:
       - uses: actions/checkout@v7
         with:
