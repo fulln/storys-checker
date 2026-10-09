@@ -71,7 +71,7 @@ git remote add origin https://github.com/fulln/storys-checker.git
 git push -u origin main
 ```
 
-工具面向本地 Agent App 使用。Agent 在工具仓库目录执行命令并读取 JSON 报告；静态预览可打开 `panel.html`，实时操作可由 Agent 启动 `npm start`，在 App 提供的浏览器预览中打开 `http://127.0.0.1:8787`。需要分发 npm 包时，应在验证过的发行目录执行 `npm publish`。`package.json.files` 只包含工具代码、公开文档与示例。
+工具面向本地 Agent App 使用。仓库根目录 `AGENTS.md` 和项目级 `.codex/skills/storys-video-production/SKILL.md` 提供视频生产入口；Agent 在目标项目中按其规则制作，在工具仓库目录执行检查命令并读取 JSON 报告。静态预览可打开 `panel.html`，实时操作可由 Agent 启动 `npm start`，在 App 提供的浏览器预览中打开 `http://127.0.0.1:8787`。需要分发 npm 包时，应在验证过的发行目录执行 `npm publish`。`package.json.files` 包含公开 Skill、工具代码、文档与示例。
 
 ## 5. 版本
 

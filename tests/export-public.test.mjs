@@ -19,6 +19,8 @@ async function fixture() {
   await fs.writeFile(path.join(root, 'package.json'), '{}');
   await fs.writeFile(path.join(root, 'README.md'), 'public');
   await fs.writeFile(path.join(root, 'SECURITY.md'), 'security');
+  await fs.mkdir(path.join(root, '.codex/skills/storys-video-production'), { recursive: true });
+  await fs.writeFile(path.join(root, '.codex/skills/storys-video-production/SKILL.md'), 'public skill');
   await fs.mkdir(path.join(root, 'docs'), { recursive: true });
   await fs.writeFile(path.join(root, 'docs/README.md'), 'docs');
   await fs.writeFile(path.join(root, 'docs/soul.md'), 'private');
@@ -46,6 +48,7 @@ test('exports runtime files and excludes private docs', async () => {
   await run(process.execPath, [path.join(root, 'scripts/export-public.mjs'), destination], { cwd: root });
   assert.equal(await fs.readFile(path.join(destination, 'package.json'), 'utf8'), '{}');
   assert.equal(await fs.readFile(path.join(destination, 'lib/project-files.mjs'), 'utf8'), '// new runtime helper');
+  assert.equal(await fs.readFile(path.join(destination, '.codex/skills/storys-video-production/SKILL.md'), 'utf8'), 'public skill');
   assert.equal(await fs.readFile(path.join(destination, 'scripts/export-public.mjs'), 'utf8').then(Boolean), true);
   await assert.rejects(fs.stat(path.join(destination, 'docs/soul.md')), { code: 'ENOENT' });
   for (const file of ['.git', 'config.json', '.env', 'examples/demo/.env', 'docs/another-private.md', 'Dockerfile', 'docker-compose.yml', 'deploy', 'docs/DEPLOY.md']) {

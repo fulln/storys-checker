@@ -1,12 +1,13 @@
 # Storys Checker
 
-本地 Agent App 驱动的面板 + 检查引擎，用来**复盘和守护一条 Remotion 视频生产流水线**。
+本地 Agent App 驱动的视频生产工作流入口 + 检查面板。Agent 按项目规则完成选题、脚本、分镜、声音、画面、渲染和交付；Storys Checker 跟踪每步产物并提供检查反馈。
 
 扫描你的视频项目 → 生成一张可双击打开的控制台 → 显示今天的声音/画面/门禁进度 → 跑一遍检查拿到健康分 → 拦住不合格的发布包。
 
 - **零依赖**：只用 Node 内置模块，`git clone` 后不需要 `npm install`。
 - **配置驱动**：项目清单、能力清单、检查项、门禁、修复命令都在 `config.json`，改数据不改引擎。
 - **可被 Agent 驱动**：有本地命令和文件访问能力的 Agent 可以执行扫描、检查、修复和门禁，并读取结构化报告；面板用于预览和人工操作。
+- **项目级生产 Skill**：`.codex/skills/storys-video-production/SKILL.md` 指导 Agent 读取目标项目规则、推进各阶段并验证真实成片。
 
 ```bash
 npm run demo      # 用自带的示例项目跑一遍
@@ -55,7 +56,9 @@ npm run build           # 扫描 + 生成自包含的 panel.html
 
 这个项目由本地 Agent App 中的 Agent 调用命令和读取文件。运行入口是 Node.js 脚本和本地面板；Agent App 提供本机命令执行、文件访问和预览能力。具体调用流程见 [Agent App 使用说明](./docs/AGENT_APP.md)。
 
-仓库根目录的 [AGENTS.md](./AGENTS.md) 提供检查器操作说明，支持读取该文件的 Agent 打开仓库后可以按它执行扫描、检查和门禁。这个仓库本身不是视频生产 Skill，也不负责从选题生成可发布成片。`examples/demo-project` 中的工作流文档和脚本 Skill 只用于演示；示例 MP3、MP4、PNG 是不可播放的占位文件。真实视频制作需要另行接入自己的 Remotion 项目、生产规则、素材、配音与渲染环境，并由 Agent 遵循目标项目的指令；检查器会对已配置项目的部分产物和门禁进行检查。
+仓库根目录的 [AGENTS.md](./AGENTS.md) 给 Agent 分流生产和检查请求；项目级 [视频生产 Skill](./.codex/skills/storys-video-production/SKILL.md) 指导 Agent 按目标项目的规则逐步生成视频，并在各阶段调用检查器。规则的具体内容、制作脚本、素材和渲染环境由目标项目提供。`examples/demo-project` 展示规则和产物的组织方式，其中 MP3、MP4、PNG 是不可播放的占位文件，制作脚本也是演示桩。
+
+想让 Agent 开始真实制作，先把 `config.json` 的 `projects[].root` 和 `videoDir` 指向可渲染的视频项目，在 Agent App 中打开本仓库，然后提出“按目标项目规则制作一期视频”。支持项目级 Skill 的 Agent 可调用 `storys-video-production`；其他有命令与文件访问能力的 Agent 可直接按 [AGENTS.md](./AGENTS.md) 和 [Agent App 使用说明](./docs/AGENT_APP.md) 工作。Agent 应读取目标项目自己的账号定位、生产流程和验收规则，逐步交付可播放成片及其验证证据。
 
 可以直接把下面这段短指令交给 Agent：
 
